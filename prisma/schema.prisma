@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 用户模型
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  avatar    String?
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联关系
+  authoredNews     News[]        @relation("NewsAuthor")
+  uploadedMedia    Media[]       @relation("MediaUploader")
+  newsHistories    NewsHistory[] @relation("HistoryAuthor")
+  createdCategories Category[]    @relation("CategoryCreator")
+
+  @@map("users")
+}
+
+// 新闻分类模型
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  parentId    String?
+  creatorId   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // 关联关系
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  creator  User?      @relation("CategoryCreator", fields: [creatorId], references: [id])
+  news     News[]
+
+  @@map("categories")
+}
+
+// 新闻模型
+model News {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  content       String
+  excerpt       String?
+  status        String    @default("draft") // draft, published, archived
+  categoryId    String?
+  authorId      String
+  featuredImage String?
+  tags          String[]
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 关联关系
+  author  User           @relation("NewsAuthor", fields: [authorId], references: [id])
+  category Category?     @relation(fields: [categoryId], references: [id])
+  history NewsHistory[]
+
+  @@map("news")
+}
+
+// 新闻历史记录模型
+model NewsHistory {
+  id        String   @id @default(cuid())
+  newsId    String
+  title     String
+  content   String
+  authorId  String
+  createdAt DateTime @default(now())
+
+  // 关联关系
+  author User @relation("HistoryAuthor", fields: [authorId], references: [id])
+  news   News @relation(fields: [newsId], references: [id])
+
+  @@map("news_histories")
+}
+
+// 媒体文件模型
+model Media {
+  id          String   @id @default(cuid())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  path        String
+  url         String
+  width       Int?
+  height      Int?
+  alt         String?
+  uploadedBy  String
+  createdAt   DateTime @default(now())
+
+  // 关联关系
+  uploader User @relation("MediaUploader", fields: [uploadedBy], references: [id])
+
+  @@map("media")
+}
+
+// 网站设置模型
+model Setting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  type        String   @default("string") // string, number, boolean, json
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("settings")
+}
