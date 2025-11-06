@@ -7,7 +7,6 @@ export default defineNuxtConfig({
 
   // Modules
   modules: [
-    '@nuxt/ui',
     '@nuxt/image',
     '@pinia/nuxt',
     'nuxt-auth-utils'
